@@ -417,15 +417,25 @@ body[data-demo="true"] .xrow.reporting .xn i { background: var(--lit); box-shado
 .slab { display: block; height: calc(22px * var(--k)); font: 500 calc(12px * var(--k)) var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--quiet); pointer-events: none; white-space: nowrap; }
 .slab.cost { line-height: calc(19px * var(--k)); }
 .slab.tok { line-height: calc(25px * var(--k)); }
+.specbars { position: relative; min-width: 0; }
 #cSpec { display: block; width: 100%; height: calc(44px * var(--k)); }
 #cSpec .cacheRead { fill: var(--c-cacheread); } #cSpec .cacheWrite { fill: var(--c-cachewrite); } #cSpec .output { fill: var(--c-output); } #cSpec .fresh { fill: var(--c-input); }
 #cSpec .band { opacity: .28; }
 #cSpec .unsplit { fill: url(#hatchfill); stroke: var(--hair); vector-effect: non-scaling-stroke; }
 #cSpec .edge { fill: none; stroke: var(--hair); vector-effect: non-scaling-stroke; }
-/* the class and its dollars printed inside any segment wide enough to hold them: ink on the dark end of the ramp, white on the light end */
-#cSpec text { font: 500 12px var(--sans); fill: var(--ink); pointer-events: none; }
-#cSpec text.onlight { fill: #0B1220; }
-#cSpec text.ondark { fill: #FFFFFF; }
+/* the class and its dollars printed over any segment wide enough to hold them: ink on the dark end of the ramp, white on the light end.
+   The drawing stretches with the pane, so the labels are HTML laid over it, in the page's own type. A label shows its last line only, and
+   a part that does not fit wraps out of sight whole: the class gives way first, then the figure (the empty ::after takes the last line
+   when the figure alone does not fit), and the whole is on hover */
+.speclabs { position: absolute; inset: 0; }
+.slabel { position: absolute; display: flex; flex-wrap: wrap; align-content: flex-end; overflow: hidden; font: 500 calc(12px * var(--k)) var(--sans); white-space: nowrap; }
+.slabel > span, .slabel::after { flex: none; height: 100%; }
+.slabel > span { display: flex; align-items: center; padding-left: calc(6px * var(--k)); }
+.slabel > .amt { padding-right: calc(6px * var(--k)); font-variant-numeric: tabular-nums; }
+.slabel .sep { margin: 0 calc(-3px * var(--k)) 0 calc(3px * var(--k)); }
+.slabel::after { content: ""; }
+.slabel.onlight { color: #0B1220; }
+.slabel.ondark { color: #FFFFFF; }
 .specwrap.void #cSpec { opacity: .12; }
 .specwrap.void .voidstate { min-height: calc(46px * var(--k)); }
 /* each legend item is one line ("cache write 38% est. · 7% tok") and the items flow as whole units, so a share never sits alone on the next line */

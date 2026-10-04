@@ -1518,13 +1518,14 @@
         : !byClass && w.cost.status === "none" ? `Nothing has been priced in the ${PERIOD_TEXT[period][0]}.`
         : !byClass ? "This hub does not split its estimate by class." : "Nothing has been priced in this period.";
       svg.innerHTML = "";
+      $("specLabels").innerHTML = "";
       $("specLegend").innerHTML = "";
     } else {
-      // two 22px bars; any segment wide enough (≥ 12 %) carries its class and its dollars printed inside, in the ink the ramp's end needs;
+      // two 22px bars; any segment wide enough (≥ 12 %) carries its class and its dollars printed over it, in the ink the ramp's end needs;
       // the compact frame draws the cost bar alone (the token bar's shares stay in the legend's title and the aria label)
       const compact = compactMQ.matches;
-      const W = 520, TOP = [2, 24], BOT = [36, 58];
-      svg.setAttribute("viewBox", compact ? "0 0 520 24" : "0 0 520 60");
+      const W = 520, H = compact ? 24 : 60, TOP = [2, 24], BOT = [36, 58];
+      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
       const floor = w.cost.status === "partial" ? "+" : "";
       let x1 = 0, x2 = 0, parts = [];
       const cost = ORDER.map((k) => [k, byClass[k] / usd]).concat(byClass.unsplitUsd > 0 ? [["unsplit", byClass.unsplitUsd / usd]] : []);
@@ -1533,12 +1534,15 @@
       // the light end of the ramp (output, cache write) takes dark ink on dark; the dark end (input, cache read) takes white — reversed on the light theme, where the ramp is reversed
       const dark = currentTheme() === "dark";
       const inkFor = (k) => (dark ? (k === "output" || k === "cacheWrite" ? "onlight" : "ondark") : (k === "output" || k === "cacheWrite" ? "ondark" : "onlight"));
-      const label = (k, x, wdt, y, text) => wdt >= W * 0.12 ? `<text class="${inkFor(k)}" x="${(x + 6).toFixed(1)}" y="${(y[0] + 15).toFixed(1)}" textLength="${Math.min(wdt - 12, text.length * 6.6).toFixed(1)}" lengthAdjust="spacingAndGlyphs">${esc(text)}</text>` : "";
-      let out = "";
+      // the drawing stretches with the pane, and type inside it would stretch with it: a label is HTML laid over its segment, placed in percent of
+      // the drawing, its class and its figure as two parts so that the class gives way whole where the segment is narrow (.slabel in console.css)
+      const pc = (v, whole) => (v / whole * 100).toFixed(2) + "%";
+      const label = (k, x, wdt, y, figure) => { const name = CLASS_LABEL[k].replace("uncached ", ""); return wdt >= W * 0.12 ? `<span class="slabel ${inkFor(k)}" style="left:${pc(x, W)};top:${pc(y[0], H)};width:${pc(wdt, W)};height:${pc(y[1] - y[0], H)}" title="${esc(name)} · ${esc(figure)}"><span class="nm">${esc(name)}<span class="sep">·</span></span><span class="amt">${esc(figure)}</span></span>` : ""; };
+      let out = "", labels = "";
       const topX = {}, botX = {};
-      for (const [k, share] of cost) { const wdt = share * W; out += seg(k, x1, wdt, TOP); if (k !== "unsplit") out += label(k, x1, wdt, TOP, `${CLASS_LABEL[k].replace("uncached ", "")} · ${money(byClass[k])}${floor} est.`); topX[k] = [x1, x1 + wdt]; x1 += wdt; }
+      for (const [k, share] of cost) { const wdt = share * W; out += seg(k, x1, wdt, TOP); if (k !== "unsplit") labels += label(k, x1, wdt, TOP, `${money(byClass[k])}${floor} est.`); topX[k] = [x1, x1 + wdt]; x1 += wdt; }
       if (!compact) {
-        for (const [k, share] of tok) { const wdt = share * W; out += seg(k, x2, wdt, BOT); out += label(k, x2, wdt, BOT, `${CLASS_LABEL[k].replace("uncached ", "")} · ${fmt(t[k])}`); botX[k] = [x2, x2 + wdt]; x2 += wdt; }
+        for (const [k, share] of tok) { const wdt = share * W; out += seg(k, x2, wdt, BOT); labels += label(k, x2, wdt, BOT, fmt(t[k])); botX[k] = [x2, x2 + wdt]; x2 += wdt; }
         for (const k of CLASSES) {
           const a = topX[k], b = botX[k];
           if (!a || !b) continue;
@@ -1546,6 +1550,7 @@
         }
       }
       svg.innerHTML = parts.join("") + out + `<rect class="edge" x="0" y="${TOP[0]}" width="${W}" height="${TOP[1] - TOP[0]}"/>` + (compact ? "" : `<rect class="edge" x="0" y="${BOT[0]}" width="${W}" height="${BOT[1] - BOT[0]}"/>`);
+      $("specLabels").innerHTML = labels;
       svg.setAttribute("aria-label", "Cost share over token share: " + ORDER.map((k) => `${CLASS_LABEL[k]} ${pct(byClass[k] / usd, 0)} of cost, ${pct(t[k] / total, 0)} of tokens`).join("; ") + (floor ? `; the estimate is a floor: ${w.cost.unpricedModels.join(", ")} unpriced` : ""));
       const partialWhy = floor ? ` · a floor: ${w.cost.unpricedModels.join(", ")} unpriced` : "";
       $("specLegend").innerHTML = ORDER.map((k) => `<span title="${esc(CLASS_LABEL[k])}: ${money(byClass[k])}${floor} est. · ${pct(byClass[k] / usd)} of the estimate · ${pct(t[k] / total)} of tokens${esc(partialWhy)}"><i class="sw ${k}"></i>${CLASS_LABEL[k].replace("uncached ", "")} <b>${pct(byClass[k] / usd, 0)}</b><em>est.</em><em class="sep">·</em><b>${pct(t[k] / total, 0)}</b><em>tok</em></span>`).join("")

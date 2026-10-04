@@ -172,7 +172,11 @@
         <div class="specwrap inst" id="specWrap">
           <div class="voidstate"><b>No estimate</b><span id="specReason">—</span></div>
           <div class="slabs" aria-hidden="true"><span class="slab cost">cost</span><span class="slab tok">tokens</span></div>
-          <svg id="cSpec" viewBox="0 0 520 60" preserveAspectRatio="none" role="img" aria-label="Cost share over token share, by class"></svg>
+          <!-- the drawing stretches with the pane, so its labels are HTML laid over it, never text inside it -->
+          <div class="specbars">
+            <svg id="cSpec" viewBox="0 0 520 60" preserveAspectRatio="none" role="img" aria-label="Cost share over token share, by class"></svg>
+            <div class="speclabs" id="specLabels" aria-hidden="true"></div>
+          </div>
         </div>
         <div class="speclegend" id="specLegend"></div>
         <div class="specmodels" id="specModels"></div>

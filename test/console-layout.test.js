@@ -71,9 +71,9 @@ test("the spend spectrum names its bars in a column of their own", () => {
   assert.match(CSS, /\.slab \{ display: block; height: calc\(22px \* var\(--k\)\)/u);
   assert.doesNotMatch(CSS, /\.slab \{[^}]*position: absolute/u);
   assert.doesNotMatch(CSS, /\.specwrap \{[^}]*padding-left/u);
-  // 22px bars carry the class and its dollars inside any segment wide enough; the ink follows the ramp's end
+  // 22px bars carry the class and its dollars over any segment wide enough, as HTML laid over the stretched drawing; the ink follows the ramp's end
   assert.match(JS, /TOP = \[2, 24\], BOT = \[36, 58\];/u);
-  assert.match(JS, /wdt >= W \* 0\.12 \? `<text class="\$\{inkFor\(k\)\}"/u);
+  assert.match(JS, /wdt >= W \* 0\.12 \? `<span class="slabel \$\{inkFor\(k\)\}"/u);
 });
 
 test("on a phone the lanes' footer stays in frame, the spend legend wraps, and the figures that cost money come first", () => {

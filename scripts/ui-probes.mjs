@@ -36,6 +36,9 @@
  *     session rows keep a forty-character project name inside its own cell;
  *     no page scrolls sideways at 360;
  *   - nothing renders below 12px, with a sheet open too;
+ *   - no type is drawn inside a stretched chart, where it would stretch too:
+ *     at 1920, 1440, 1280 and 390 each of the spend spectrum's labels sits
+ *     over its own segment, and a part that does not fit gives way whole;
  *   - keyboard: at 390 every lane row is reachable by Tab and opens on Enter;
  *     at 1440 J and K move DOM focus onto the row; closing a sheet returns
  *     focus to what opened it — a lane opened with Enter, a Team people or
@@ -518,6 +521,38 @@ await section("clipping", async () => {
     });
     if (!r) fail(`lanes ${width}: no lane row to probe`);
     else if (!r.alone) fail(`lanes ${width}: a twenty-four-character project name with no branch is cut inside a ${r.cell}px cell`); else ok(`lanes ${width}: a twenty-four-character name alone keeps its ${r.cell}px cell`);
+    await context.close();
+  }
+});
+
+// ── 4b. the spend spectrum's labels ─────────────────────────────────────
+/* A chart stretches with its pane (preserveAspectRatio="none"), and type drawn inside one is stretched with it: in the spectrum's
+   bars a label came out over twice its width at 1920 and squeezed to under two thirds on a phone. The labels are HTML laid over
+   the drawing instead, and a part that does not fit its segment gives way whole. */
+await section("spectrum labels", async () => {
+  for (const width of [1920, 1440, 1280, 390]) {
+    const { page, context } = await open(width, "dark");
+    const r = await page.evaluate(() => {
+      const stretched = [...document.querySelectorAll("svg text")].filter((t) => t.checkVisibility()).map((t) => { const m = t.getScreenCTM(); return [t.textContent.trim(), m.a / m.d]; })
+        .filter(([, by]) => Math.abs(by - 1) > 0.02).map(([words, by]) => `"${words.slice(0, 30)}" drawn ×${by.toFixed(2)} wide`);
+      const segments = [...document.querySelectorAll("#cSpec rect:not(.edge)")].map((s) => s.getBoundingClientRect());
+      const off = (a, b) => ["left", "top", "right", "bottom"].some((side) => Math.abs(a[side] - b[side]) > 1);
+      const labels = [...document.querySelectorAll("#specLabels .slabel")], bad = [];
+      let whole = 0;
+      for (const label of labels) {
+        const box = label.getBoundingClientRect();
+        if (!segments.some((s) => !off(s, box))) bad.push(`"${label.title}" is not over its segment`);
+        // a part that did not fit has wrapped out of sight, whole; what stays in sight stays inside the segment
+        const seen = [...label.children].map((part) => part.getBoundingClientRect()).filter((p) => p.bottom > box.top + 1 && p.top < box.bottom - 1);
+        if (seen.some((p) => p.left < box.left - 0.5 || p.right > box.right + 0.5)) bad.push(`"${label.title}" is cut by its segment`);
+        if (seen.length === label.children.length) whole += 1;
+      }
+      return { stretched, bad, labels: labels.length, whole };
+    });
+    if (r.stretched.length) fail(`console ${width}: type drawn inside a stretched chart: ${r.stretched.join("; ")}`); else ok(`console ${width}: no type is drawn inside a stretched chart`);
+    if (r.bad.length) fail(`console ${width}: the spectrum's labels: ${r.bad.join("; ")}`);
+    else if (!r.labels || (width >= 1440 && !r.whole)) fail(`console ${width}: the spectrum's bars carry ${r.labels} labels, ${r.whole} of them whole`);
+    else ok(`console ${width}: the spectrum's ${r.labels} labels sit over their segments, ${r.whole} whole and the rest giving way whole`);
     await context.close();
   }
 });

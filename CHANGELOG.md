@@ -13,6 +13,9 @@
   installed package; verify Accounts and its authentication in package acceptance.
 - Report the actual package version to the native Codex app-server.
 - Document the published v0.4.3 Linux hub image and its provenance verification.
+- Print the spend spectrum's labels over its bars in the page's own type, not
+  inside the stretched chart, so they no longer widen with the pane or narrow on
+  a phone. A segment too narrow for its label drops the class before the figure.
 
 ## 0.4.3 — 2026-10-03
 
